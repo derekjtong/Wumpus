@@ -108,17 +108,17 @@ class KnowledgeBase:
             return
 
 
-# Testing
-kb = KnowledgeBase()
+# # Testing
+# kb = KnowledgeBase()
 
-# No wumpus in 21
-kb.tell(["not", "w21"])
+# # No wumpus in 21
+# kb.tell(["not", "w21"])
 
-# Stench in 31
-kb.tell(["w21", "or", ["w32", "or", "w41"]])
+# # Stench in 31
+# kb.tell(["w21", "or", ["w32", "or", "w41"]])
 
-# No wumpus 32
-kb.tell(["not", "w32"])
+# # No wumpus 32
+# kb.tell(["not", "w32"])
 
-# print(kb.kb)
-print("result: ", kb.ask(["not", "w32"]))
+# # print(kb.kb)
+# print("result: ", kb.ask(["not", "w32"]))
