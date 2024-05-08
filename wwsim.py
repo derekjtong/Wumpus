@@ -640,7 +640,10 @@ if len(sys.argv) == 2:
         print("GAME OVER")
         print("\n")
         if sim.endEpisode:
-            print("Agent acquired the gold.")
+            if sim.hasGold:
+                print("Agent acquired the gold.")
+            else:
+                print("Agent left without the gold.")
         elif sim.lastMove.lower() == "climb":
             print("Agent has climbed out of cave.")
         elif sim.agentPos == sim.wumpusLoc:
