@@ -49,9 +49,9 @@ class WWAgent:
 
         # stench, tell kb about possible wumpus locations
         if "stench" in self.percepts:
-            # print(
-            #     f"Agent detected a stench at {self.position}, put wumpus in neighbors"
-            # )
+            print(
+                # f"Agent detected a stench at {self.position}, put wumpus in neighbors"
+            )
             clause = []
             for dir in self.get_directions():
                 if not clause:
@@ -67,10 +67,8 @@ class WWAgent:
                 self.kb.tell(["not", f"w{dir}"])
 
         # breeze, tell kb about possible pit locations
-        if "stench" in self.percepts:
-            # print(
-            #     f"Agent detected a breeze at {self.position}, put wumpus in neighbors"
-            # )
+        if "breeze" in self.percepts:
+            # print(f"Agent detected a breeze at {self.position}, put pits in neighbors")
             clause = []
             for dir in self.get_directions():
                 if not clause:
@@ -80,7 +78,7 @@ class WWAgent:
             self.kb.tell(clause)
         else:
             # print(
-            #     f"Agent detected a no breeze at {self.position}, put no wumpus in neighbors"
+            #     f"Agent detected a no breeze at {self.position}, put no pits in neighbors"
             # )
             for dir in self.get_directions():
                 self.kb.tell(["not", f"p{dir}"])
