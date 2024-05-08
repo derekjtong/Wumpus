@@ -33,6 +33,7 @@ class WWAgent:
         self.map = [[self.percepts for i in range(self.max)] for j in range(self.max)]
         self.kb = KnowledgeBase()
         self.planned_destination = None
+        self.visited = dict()
         print("New agent created")
 
     # Add the latest percepts to list of percepts received so far
@@ -86,6 +87,11 @@ class WWAgent:
         # not dead
         self.kb.tell(["not", f"w{self.position[0]}{self.position[1]}"])
         self.kb.tell(["not", f"p{self.position[0]}{self.position[1]}"])
+
+        if self.position in self.visited:
+            self.visited[self.position] += 1
+        else:
+            self.visited[self.position] = 1
 
     # Since there is no percept for location, the agent has to predict
     # what location it is in based on the direction it was facing
@@ -145,6 +151,10 @@ class WWAgent:
             self.stopTheAgent = True
             return "grab"
 
+        if self.visited[self.position] > 100:
+            print("Exceeded limit, unsolvable")
+            return "exit"
+
         if not self.planned_destination or self.planned_destination == self.position:
             possible_moves = []
             possible_dirs = self.get_directions()
@@ -159,7 +169,7 @@ class WWAgent:
             if not possible_moves:
                 # No 100% safe move
                 print("No safe move")
-                return
+                return "exit"
             else:
                 # Get random move
                 move = possible_moves[randint(0, len(possible_moves) - 1)]
