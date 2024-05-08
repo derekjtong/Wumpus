@@ -49,15 +49,15 @@ class WWAgent:
 
         # stench, tell kb about possible wumpus locations
         if "stench" in self.percepts:
-            print(
-                # f"Agent detected a stench at {self.position}, put wumpus in neighbors"
-            )
+            # print(
+            # f"Agent detected a stench at {self.position}, put wumpus in neighbors"
+            # )
             clause = []
             for dir in self.get_directions():
                 if not clause:
-                    clause.append(f"w{dir}")
+                    clause = ["w{dir}"]
                 else:
-                    clause.append([f"w{dir}", "or", [clause]])
+                    clause = [f"w{dir}", "or", [clause]]
             self.kb.tell(clause)
         else:
             # print(
@@ -72,9 +72,9 @@ class WWAgent:
             clause = []
             for dir in self.get_directions():
                 if not clause:
-                    clause.append(f"p{dir}")
+                    clause = ["p{dir}"]
                 else:
-                    clause.append([f"p{dir}", "or", [clause]])
+                    clause = [f"p{dir}", "or", [clause]]
             self.kb.tell(clause)
         else:
             # print(
