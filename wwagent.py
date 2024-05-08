@@ -17,6 +17,7 @@ wumpus world simulation -----  dml Fordham 2019
 """
 
 from random import randint
+from knowledge_base import *
 
 
 # This is the class that represents an agent
@@ -30,6 +31,8 @@ class WWAgent:
         self.arrow = 1
         self.percepts = (None, None, None, None, None)
         self.map = [[self.percepts for i in range(self.max)] for j in range(self.max)]
+        self.kb = KnowledgeBase()
+        self.planned_destination = None
         print("New agent created")
 
     # Add the latest percepts to list of percepts received so far
@@ -43,6 +46,48 @@ class WWAgent:
         if self.position[0] in range(self.max) and self.position[1] in range(self.max):
             self.map[self.position[0]][self.position[1]] = self.percepts
         # puts the percept at the spot in the map where sensed
+
+        # stench, tell kb about possible wumpus locations
+        if "stench" in self.percepts:
+            # print(
+            #     f"Agent detected a stench at {self.position}, put wumpus in neighbors"
+            # )
+            clause = []
+            for dir in self.get_directions():
+                if not clause:
+                    clause.append(f"w{dir}")
+                else:
+                    clause.append([f"w{dir}", "or", [clause]])
+            self.kb.tell(clause)
+        else:
+            # print(
+            #     f"Agent detected a no stench at {self.position}, put no wumpus in neighbors"
+            # )
+            for dir in self.get_directions():
+                self.kb.tell(["not", f"w{dir}"])
+
+        # breeze, tell kb about possible pit locations
+        if "stench" in self.percepts:
+            # print(
+            #     f"Agent detected a breeze at {self.position}, put wumpus in neighbors"
+            # )
+            clause = []
+            for dir in self.get_directions():
+                if not clause:
+                    clause.append(f"p{dir}")
+                else:
+                    clause.append([f"p{dir}", "or", [clause]])
+            self.kb.tell(clause)
+        else:
+            # print(
+            #     f"Agent detected a no breeze at {self.position}, put no wumpus in neighbors"
+            # )
+            for dir in self.get_directions():
+                self.kb.tell(["not", f"p{dir}"])
+
+        # not dead
+        self.kb.tell(["not", f"w{self.position[0]}{self.position[1]}"])
+        self.kb.tell(["not", f"p{self.position[0]}{self.position[1]}"])
 
     # Since there is no percept for location, the agent has to predict
     # what location it is in based on the direction it was facing
@@ -102,26 +147,56 @@ class WWAgent:
             self.stopTheAgent = True
             return "grab"
 
-        # choose a random direction, and move
-        actionSelection = randint(0, 1)
-        if actionSelection > 0:  # there is an 50% chance of moving forward
-            action = "move"
-            # predict the effect of this
-            self.calculateNextPosition(action)
-        else:  # pick left or right 50%
-            actionSelection = randint(0, 1)
-            if actionSelection > 0:
-                action = "left"
+        if not self.planned_destination or self.planned_destination == self.position:
+            possible_moves = []
+            possible_dirs = self.get_directions()
+            if not possible_dirs:
+                print("No possible move")
+                return
+            for dir in self.get_directions():
+                if self.kb.ask([["not", f"w{dir}"], "and", ["not", f"p{dir}"]]):
+                    possible_moves.append(dir)
+
+            print("possible_moves=", possible_moves)
+            if not possible_moves:
+                # No 100% safe move
+                print("No safe move")
+                return
             else:
-                action = "right"
-            # predict the effect of this
+                # Get random move
+                move = possible_moves[randint(0, len(possible_moves) - 1)]
+                self.planned_destination = (int(move[0]), int(move[1]))
+                print("setting planned action to", self.planned_destination)
+
+        # move towards planned destination
+        if self.planned_destination[0] == self.position[0]:
+            # vertical move
+            if self.planned_destination[1] < self.position[1]:
+                goal_face = "up"
+            else:
+                goal_face = "down"
+        else:
+            if self.planned_destination[0] > self.position[0]:
+                goal_face = "right"
+            else:
+                goal_face = "left"
+
+        if goal_face == self.facing:
+            action = "move"
+            self.calculateNextPosition(action)
+        else:
+            action = "left"
             self.calculateNextDirection(action)
-        print(
-            "Random agent:",
-            action,
-            "-->",
-            self.position[1],
-            self.position[0],
-            self.facing,
-        )
+
+        print("planned action:", action)
         return action
+
+    def get_directions(self):
+        dirs = [0, 1, 0, -1, 0]
+        surroundings = []
+        for k in range(4):
+            new_x = self.position[0] + dirs[k]
+            new_y = self.position[1] + dirs[k + 1]
+            if new_x >= 0 and new_x < self.max and new_y >= 0 and new_y < self.max:
+                surroundings.append(f"{new_x}{new_y}")
+        return surroundings
