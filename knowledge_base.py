@@ -25,8 +25,6 @@ class KnowledgeBase:
 
     def ask(self, alpha):
         """Query the KB to see if alpha is entailed by the KB."""
-        print("asking kb:", alpha)
-        print("kb size:", len(self.kb))
         return self.tt_entails(self.kb, alpha)
 
     def is_true(self, prop, model):
@@ -61,7 +59,7 @@ class KnowledgeBase:
         """Recursively check all possible models."""
         if len(symbols) == 0:
             # print("model ", model)
-            print(".", end=" ")
+            # print(".", end=" ")
             if self.is_true(kb, model):
                 # print("     found model where kb=true")
                 # print(

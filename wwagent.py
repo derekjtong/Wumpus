@@ -174,7 +174,7 @@ class WWAgent:
                 # Get random move
                 move = possible_moves[randint(0, len(possible_moves) - 1)]
                 self.planned_destination = (int(move[0]), int(move[1]))
-                print("setting planned action to", self.planned_destination)
+                # print("setting planned action to", self.planned_destination)
 
         # move towards planned destination
         if self.planned_destination[0] == self.position[0]:
@@ -196,7 +196,7 @@ class WWAgent:
             action = "left"
             self.calculateNextDirection(action)
 
-        print("planned action:", action)
+        # print("planned action:", action)
         return action
 
     def get_directions(self):
