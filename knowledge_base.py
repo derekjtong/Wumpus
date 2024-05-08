@@ -9,18 +9,24 @@
 class KnowledgeBase:
     def __init__(self):
         self.kb = []
+        self.seen_clauses = []
+        self.debug_mode = False
 
     def tell(self, clause):
         """Add a clause in propositional logic to the KB."""
+        if clause in self.seen_clauses:
+            return
+        else:
+            self.seen_clauses.append(clause)
         if not self.kb:
             self.kb.append(clause)
         else:
-            newkb = [clause, "and"]
-            newkb.append(self.kb)
-            self.kb = newkb
+            self.kb = [clause, "and"] + [self.kb]
 
     def ask(self, alpha):
         """Query the KB to see if alpha is entailed by the KB."""
+        print("asking kb:", alpha)
+        print("kb size:", len(self.kb))
         return self.tt_entails(self.kb, alpha)
 
     def is_true(self, prop, model):
@@ -55,16 +61,16 @@ class KnowledgeBase:
         """Recursively check all possible models."""
         if len(symbols) == 0:
             # print("model ", model)
-            # print("checking...")
+            print(".", end=" ")
             if self.is_true(kb, model):
-                print("found model where kb=true")
+                # print("     found model where kb=true")
                 # print(
                 #     "KB true, KB=T alpha? ", self.is_true(alpha, model)
                 # )  # to illustrate how it works
                 if self.is_true(alpha, model):
-                    print("    kb entails alpha:", model)
+                    # print("         kb entails alpha:", model)
                     return True
-                print("    kb does not alpha:", model)
+                # print("         kb does not alpha:", model)
                 return False
             else:
                 # print("model is not true")
