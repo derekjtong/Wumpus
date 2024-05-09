@@ -9,8 +9,16 @@
 class KnowledgeBase:
     def __init__(self):
         self.kb = []
+
+        # Use seen clauses rather than searching kb due to recursion problems
         self.seen_clauses = []
-        self.debug_mode = False
+
+        # Tracks symbols in kb so tt_entails does not have to recalculate
+        self.cached_symobls = []
+
+        # Visual indicator for model checking progress
+        self.progress_bar = 0
+        self.expected_maximum_checks = 1000000
 
     def tell(self, clause):
         """Add a clause in propositional logic to the KB."""
@@ -22,10 +30,49 @@ class KnowledgeBase:
             self.kb.append(clause)
         else:
             self.kb = [clause, "and"] + [self.kb]
+        self.cached_symobls = self.get_symbols(self.kb)
 
     def ask(self, alpha):
         """Query the KB to see if alpha is entailed by the KB."""
-        return self.tt_entails(self.kb, alpha)
+        self.progress_bar = 0
+        print("\rAsking", alpha)
+        result = self.tt_entails(self.kb, alpha)
+        print(f"\n")
+        return result
+
+    def tt_entails(self, kb, alpha):
+        """Check all models to determine if kb entails alpha."""
+        symbols = self.cached_symobls + self.get_symbols(alpha)
+        # print("--------- all truth tables ---------")
+        # self.tt_enumerate(symbols, [])
+        # print("---------   check tables   ---------")
+        true_counts, total_counts = self.tt_check_all(symbols, [], kb, alpha)
+        if total_counts == 0:
+            return 0
+        return true_counts / total_counts
+
+    def tt_check_all(self, symbols, model, kb, alpha):
+        """Recursively check all possible models."""
+        self.update_progress_bar()
+        if len(symbols) == 0:
+            if self.is_true(kb, model):
+                if self.is_true(alpha, model):
+                    # alpha true, kb true
+                    return 1, 1
+                # alpha false, kb true
+                return 0, 1
+            else:
+                # alpha false, kb false
+                return 0, 0
+        else:
+            p = symbols[0]
+            rest = list(symbols[1 : len(symbols)])
+
+            self.progress_bar += 1
+
+            true1, total1 = self.tt_check_all(rest, model + [(p, True)], kb, alpha)
+            true2, total2 = self.tt_check_all(rest, model + [(p, False)], kb, alpha)
+            return true1 + true2, total1 + total2
 
     def is_true(self, prop, model):
         """Check whether prop is true in model"""
@@ -47,39 +94,6 @@ class KnowledgeBase:
             return left and right
         return False
 
-    def tt_entails(self, kb, alpha):
-        """Check all models to determine if kb entails alpha."""
-        symbols = self.get_symbols(self.kb + [alpha])
-        # print("--------- all truth tables ---------")
-        # self.tt_enumerate(symbols, [])
-        # print("---------   check tables   ---------")
-        return self.tt_check_all(symbols, [], kb, alpha)
-
-    def tt_check_all(self, symbols, model, kb, alpha):
-        """Recursively check all possible models."""
-        if len(symbols) == 0:
-            # print("model ", model)
-            # print(".", end=" ")
-            if self.is_true(kb, model):
-                # print("     found model where kb=true")
-                # print(
-                #     "KB true, KB=T alpha? ", self.is_true(alpha, model)
-                # )  # to illustrate how it works
-                if self.is_true(alpha, model):
-                    # print("         kb entails alpha:", model)
-                    return True
-                # print("         kb does not alpha:", model)
-                return False
-            else:
-                # print("model is not true")
-                return True
-        else:
-            p = symbols[0]
-            rest = list(symbols[1 : len(symbols)])
-            return self.tt_check_all(
-                rest, model + [(p, True)], kb, alpha
-            ) and self.tt_check_all(rest, model + [(p, False)], kb, alpha)
-
     def get_symbols(self, clauses):
         """Extract all unique symbols from the KB."""
         symbols = set()
@@ -99,8 +113,24 @@ class KnowledgeBase:
         """Check if the item is a logical operator."""
         return item in ["not", "and", "or", "implies", "iff"]
 
+    def update_progress_bar(self):
+        """Prints a simple progress bar based on the model check count, capped at maximum."""
+        total_bar_length = 100
+
+        filled_length = int(
+            round(
+                total_bar_length
+                * self.progress_bar
+                / max(1, self.expected_maximum_checks)
+            )
+        )
+        filled_length = min(filled_length, total_bar_length)  # Cap at max
+
+        bar = "█" * filled_length + "-" * (total_bar_length - filled_length)
+        print(f"\rProgress: [{bar}] {self.progress_bar} checks", end="\r")
+
     def tt_enumerate(self, symbols, model):
-        """Truth Table Enumeration for debugging purposes"""
+        """Truth table enumeration for debugging purposes"""
         if len(symbols) == 0:
             print("model ", model)
             return
