@@ -1,3 +1,10 @@
+# Derek Tong
+# Professor Lyons
+# CISC 6525 Artificial Intelligence
+# May 9, 2024
+#
+# Wumpus World - Agent Implementation
+
 """
 Modified from wwagent.py written by Greg Scott
 
@@ -20,18 +27,20 @@ from random import randint
 from knowledge_base import *
 
 
-# This is the class that represents an agent
 class WWAgent:
     def __init__(self):
         self.max = 4  # number of cells in one side of square world
-        self.stopTheAgent = False  # set to true to stop th agent at end of episode
+        self.stopTheAgent = False  # set to true to stop the agent at end of episode
         self.position = (0, 3)  # top is (0,0)
         self.directions = ["up", "right", "down", "left"]
         self.facing = "right"
         self.arrow = 1
         self.percepts = (None, None, None, None, None)
         self.map = [[self.percepts for i in range(self.max)] for j in range(self.max)]
+
+        # KnowledgeBase object, see knowledge_base.py
         self.kb = KnowledgeBase()
+
         self.planned_destination = None
         self.visited = dict()
         print("New agent created")
@@ -93,10 +102,6 @@ class WWAgent:
         else:
             self.visited[self.position] = 1
 
-    # Since there is no percept for location, the agent has to predict
-    # what location it is in based on the direction it was facing
-    # when it moved
-
     def calculateNextPosition(self, action):
         if self.facing == "up":
             self.position = (self.position[0], max(0, self.position[1] - 1))
@@ -107,10 +112,6 @@ class WWAgent:
         elif self.facing == "left":
             self.position = (max(0, self.position[0] - 1), self.position[1])
         return self.position
-
-    # and the same is true for the direction the agent is facing, it also
-    # needs to be calculated based on whether the agent turned left/right
-    # and what direction it was facing when it did
 
     def calculateNextDirection(self, action):
         if self.facing == "up":
@@ -134,11 +135,6 @@ class WWAgent:
             else:
                 self.facing = "up"
 
-    # this is the function that will pick the next action of
-    # the agent. This is the main function that needs to be
-    # modified when you design your new intelligent agent
-    # right now it is just a random choice agent
-
     def action(self):
         # test for controlled exit at end of successful gui episode
         if self.stopTheAgent:
@@ -153,6 +149,7 @@ class WWAgent:
 
         if self.visited[self.position] > 100:
             print("Exceeded limit, unsolvable")
+            print("Visisted:", self.visited)
             return "exit"
 
         if not self.planned_destination or self.planned_destination == self.position:
@@ -162,17 +159,24 @@ class WWAgent:
                 print("No possible move")
                 return
             for dir in self.get_directions():
-                if self.kb.ask([["not", f"w{dir}"], "and", ["not", f"p{dir}"]]):
-                    possible_moves.append(dir)
+                prob = self.kb.ask([["not", f"w{dir}"], "and", ["not", f"p{dir}"]])
+                pos_tuple = (int(dir[0]), int(dir[1]))
+                visits = self.visited.get(pos_tuple, 0)
+                # adjust probability based on visits, less visited = more likely to choose
+                adjusted_prob = prob * (1 / (1 + visits / 10))
+                possible_moves.append((adjusted_prob, pos_tuple))
 
-            print("possible_moves=", possible_moves)
             if not possible_moves:
                 # No 100% safe move
                 print("No safe move")
                 return "exit"
             else:
-                # Get random move
-                move = possible_moves[randint(0, len(possible_moves) - 1)]
+                # Sort possible moves based on probability of safety (highest first)
+                possible_moves.sort(reverse=True, key=lambda x: x[0])
+                print(
+                    "Sorted possible moves based on safety probability:", possible_moves
+                )
+                prob, move = possible_moves[0]
                 self.planned_destination = (int(move[0]), int(move[1]))
                 # print("setting planned action to", self.planned_destination)
 
