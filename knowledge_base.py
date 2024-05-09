@@ -37,7 +37,7 @@ class KnowledgeBase:
         self.progress_bar = 0
         print("\rAsking", alpha)
         result = self.tt_entails(self.kb, alpha)
-        print(f"\n")
+        print(f"\nProbability:", result, "\n")
         return result
 
     def tt_entails(self, kb, alpha):
